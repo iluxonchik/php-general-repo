@@ -6,19 +6,25 @@
 	break it.
 ****************************************************************************/
 
-define('TWITTER_URL', 'http://mobile.twitter.com/');
-define('TWITTER_ERROR_TEXT', 'Sorry, that page doesn\'t exist'); // error message in case the user is not found
+define('TWITTER_URL', 'https://mobile.twitter.com/');
+define('TWITTER_200', 'HTTP/1.0 200 OK'); // OK response header
 
 class TwitterInfo {
 
-	public $userError = false; // track if there was a username error
+	public $validUser = true; // track if there was a username error
 	
 	function __construct($user){
-
+		
 		if(isset($user) && !empty($user))
-			$this->url = TWITTER_URL . $user; 
+			$this->desktopURL = TWITTER_URL . $user; // generate user URL
 		else
-			$this->userError = true; // the argument is empty or nonexistent
+			$this->validUser = false; // the argument is empty or nonexistent
+
+		$this->responseCode = get_headers($this->desktopURL)[0]; // get response code from Twitter
+
+		if ($this->responseCode != TWITTER_200)
+			// if the responde code is anything but OK, the user is invalid
+			$this->validUser = false;
 
 	}
 
