@@ -69,4 +69,17 @@ class TwitterInfo {
 		else
 			return ERROR_INVALID_USER; // the user is not valid
 	}
+
+	function getLocation(){
+		if($this->validUser){
+			$position = strpos($this->urlCont, "<div class=\"location\">");
+			$subStr = substr($this->urlCont, $position, MAX_STRING_LENGTH);
+			$subStr = preg_replace( "/\r|\n/", "", $subStr); // remove new line chars (for preg_match)
+			preg_match("/<div class=\"location\">(.*?)<\/div>/", $subStr, $match);
+			$this->location = trim($match[1]); // remove spaces from the end and the beginning
+			return $this->location;
+		}
+		else
+			return ERROR_INVALID_USER; // the user is not valid
+	}
 }
