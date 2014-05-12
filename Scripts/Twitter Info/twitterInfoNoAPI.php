@@ -1,20 +1,13 @@
 <?php
-/****************************************************************************
+/*****************************************************************************
  *	Retrieve some user info from twitter without using twitter's API.
  *	Please note that many parts of the code are hardcoded and the code itself
-	is not very reliable, since a minor change to twitter's html layout might
-	break it.
-****************************************************************************/
-
-define('TWITTER_URL', 'https://mobile.twitter.com/');
-define('TWITTER_200', 'HTTP/1.0 200 OK'); // OK response header
-define('MAX_STRING_LENGTH', 200);
-define('VERIFIED_USER_REGEX', "/<div class=\"fullname\">(.*?)<a/");
-define('NON_VERIFIED_USER_REGEX', "/<div class=\"fullname\">(.*?)<\/div>/");
-define('USER_POSITION', "<div class=\"fullname\">");
-define('ABOUT_POSITION', "<div class=\"dir-ltr\" dir=\"ltr\">");
-define('ABOUT_REGEX', "/<div class=\"dir-ltr\" dir=\"ltr\">(.*?)<\/div>/");
-define('ERROR_INVALID_USER', -1);
+	is not very reliable, since a minor change to twitter's mobile HTML layout 
+	might break it.
+*	Some parts of the code are repeated and can be separated into even more
+	functions.
+*****************************************************************************/
+require_once('classConstants.php');
 
 class TwitterInfo {
 
@@ -39,6 +32,7 @@ class TwitterInfo {
 	}
 
 	function getName(){
+		/* gets the name specified on user's twitter profile */
 		if ($this->validUser){
 			// get twitter name from twitter url
 			$position = strpos($this->urlCont, USER_POSITION);
@@ -58,6 +52,7 @@ class TwitterInfo {
 	}
 
 	function getAbout(){
+		/* gets the profile description specified by the user on their profile*/
 		if($this->validUser){
 			$position = strpos($this->urlCont, ABOUT_POSITION);
 			$subStr = substr($this->urlCont, $position, MAX_STRING_LENGTH); // get just a part of the urls HTML
@@ -71,15 +66,57 @@ class TwitterInfo {
 	}
 
 	function getLocation(){
+		/* gets the location specified on user's twitter profile */
 		if($this->validUser){
-			$position = strpos($this->urlCont, "<div class=\"location\">");
+			$position = strpos($this->urlCont, LOCATION_POSITION);
 			$subStr = substr($this->urlCont, $position, MAX_STRING_LENGTH);
 			$subStr = preg_replace( "/\r|\n/", "", $subStr); // remove new line chars (for preg_match)
-			preg_match("/<div class=\"location\">(.*?)<\/div>/", $subStr, $match);
+			preg_match(LOCATION_REGEX, $subStr, $match);
 			$this->location = trim($match[1]); // remove spaces from the end and the beginning
 			return $this->location;
 		}
 		else
 			return ERROR_INVALID_USER; // the user is not valid
 	}
+
+	function getNumbers($positionText){
+		/* used as auxilary in getNumTweets(), getNumFollowing() and getNumFollwers()  */
+		$position = strpos($this->urlCont, $positionText);
+		$subStr = subStr($this->urlCont, $position - 100, MAX_STRING_LENGTH); // the number of followers comes before the NUM_TWEETS_POSITION in twitter's HTML
+		$subStr = preg_replace( "/\r|\n/", "", $subStr); // remove new line chars (for preg_match)
+		preg_match(NUMBERS_REGEX, $subStr, $match);
+		return trim($match[1]); // remove the spaces and return
+
+	}
+
+	function getNumTweets(){
+	/* gets the user's number of tweets */
+	if ($this->validUser){
+			$this->numTweets = $this->getNumbers(NUM_TWEETS_POSITION);
+			return $this->numTweets;
+		}
+		else
+			return ERROR_INVALID_USER; // the user is not valid
+	}
+
+	function getNumFollowing(){
+		/* gets the number of other users the user is following */
+		if ($this->validUser){
+			$this->numFollowing = $this->getNumbers(NUM_FOLLOWING_POSITION);
+			return $this->numFollowing;
+		}
+		else
+			return ERROR_INVALID_USER; // the user is not valid
+	}
+
+	function getNumFollowers(){
+		/* gets the user's number of follwers */
+		if ($this->validUser){
+			$this->numFollowers = $this->getNumbers(NUM_FOLLOWERS_POSITION);
+			return $this->numFollowers;
+		}
+		else
+			return ERROR_INVALID_USER; // the user is not valid
+	}
+	
 }
